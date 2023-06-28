@@ -2,8 +2,56 @@ import { Request, Response } from 'express';
 import Reservation, { IReservation } from '../models/Reservation';
 
 class ReservationController {
-  public async create(req: Request, res: Response): Promise<void> {
-    const {
+    public async checkAvailability(req: Request, res: Response): Promise<void> {
+        const { packageName, checkinDate, checkoutDate } = req.body;
+    
+        try {
+          const overlappingReservation = await Reservation.findOne({
+            packageName,
+            $or: [
+              {
+                checkinDate: { $lt: checkoutDate },
+                checkoutDate: { $gt: checkinDate },
+              },
+            ],
+          });
+    
+          const isAvailable = !overlappingReservation;
+    
+          res.json({ isAvailable });
+        } catch (error) {
+          res.status(500).json({ error: 'Failed to check availability' });
+        }
+      }
+
+public async create(req: Request, res: Response): Promise<void> {
+  const {
+    packageName,
+    checkinDate,
+    checkoutDate,
+    firstName,
+    lastName,
+    phoneNumber,
+    email,
+  } = req.body;
+
+  try {
+    const overlappingReservation = await Reservation.findOne({
+      packageName,
+      $or: [
+        {
+          checkinDate: { $lt: checkoutDate },
+          checkoutDate: { $gt: checkinDate },
+        },
+      ],
+    });
+
+    if (overlappingReservation) {
+      res.status(400).json({ error: 'Booking conflict: Package not available for the specified dates' });
+      return;
+    }
+
+    const reservation: IReservation = new Reservation({
       packageName,
       checkinDate,
       checkoutDate,
@@ -11,25 +59,15 @@ class ReservationController {
       lastName,
       phoneNumber,
       email,
-    } = req.body;
+    });
+    await reservation.save();
 
-    try {
-      const reservation: IReservation = new Reservation({
-        packageName,
-        checkinDate,
-        checkoutDate,
-        firstName,
-        lastName,
-        phoneNumber,
-        email,
-      });
-      await reservation.save();
-
-      res.json({ message: 'Reservation created successfully' });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to create reservation' });
-    }
+    res.json({ message: 'Reservation created successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create reservation' });
   }
+}
+
 
   public async getAll(req: Request, res: Response): Promise<void> {
     try {

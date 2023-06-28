@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import bodyParser from 'body-parser';
 import authRoutes from './routes/authRoutes';
 import reservationRoutes from './routes/reservationRoutes';
+import availabilityRoutes from './routes/availabilityRoutes';
 
 const app = express();
 const port = 3000;
@@ -19,6 +20,9 @@ app.use(bodyParser.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/reservations', reservationRoutes);
+app.use('/api/availability', availabilityRoutes);
+
+
 
 // Start the server
 app.listen(port, () => {

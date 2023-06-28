@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import Reservation, { IReservation } from '../models/Reservation';
+import nodemailer from 'nodemailer';
+import { sendEmail } from '../utils/email';
 
 class ReservationController {
     public async checkAvailability(req: Request, res: Response): Promise<void> {
@@ -24,49 +26,61 @@ class ReservationController {
         }
       }
 
-public async create(req: Request, res: Response): Promise<void> {
-  const {
-    packageName,
-    checkinDate,
-    checkoutDate,
-    firstName,
-    lastName,
-    phoneNumber,
-    email,
-  } = req.body;
+      public async create(req: Request, res: Response): Promise<void> {
+        const {
+          packageName,
+          checkinDate,
+          checkoutDate,
+          firstName,
+          lastName,
+          phoneNumber,
+          email,
+        } = req.body;
+    
+        try {
+          const overlappingReservation = await Reservation.findOne({
+            packageName,
+            $or: [
+              {
+                checkinDate: { $lt: checkoutDate },
+                checkoutDate: { $gt: checkinDate },
+              },
+            ],
+          });
+    
+          if (overlappingReservation) {
+            res.status(400).json({ error: 'Booking conflict: Package not available for the specified dates' });
+            return;
+          }
+    
+          const reservation: IReservation = new Reservation({
+            packageName,
+            checkinDate,
+            checkoutDate,
+            firstName,
+            lastName,
+            phoneNumber,
+            email,
+          });
+          await reservation.save();
+    
+          // Send email notification
+      //     const subject2 = 'New Reservation';
+      // const html2 = 'New Reservation.';
+      // const email2 =  'bookings@ceylonvoyagersretreat.com';
+      // await sendEmail(email2, subject2, html2);
 
-  try {
-    const overlappingReservation = await Reservation.findOne({
-      packageName,
-      $or: [
-        {
-          checkinDate: { $lt: checkoutDate },
-          checkoutDate: { $gt: checkinDate },
-        },
-      ],
-    });
+      const subject = 'Reservation Confirmation';
+      const html = 'Your reservation has been confirmed.';
+      await sendEmail(email, subject, html);
 
-    if (overlappingReservation) {
-      res.status(400).json({ error: 'Booking conflict: Package not available for the specified dates' });
-      return;
-    }
-
-    const reservation: IReservation = new Reservation({
-      packageName,
-      checkinDate,
-      checkoutDate,
-      firstName,
-      lastName,
-      phoneNumber,
-      email,
-    });
-    await reservation.save();
-
-    res.json({ message: 'Reservation created successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create reservation' });
-  }
-}
+      
+    
+          res.json({ message: 'Reservation created successfully' });
+        } catch (error) {
+          res.status(500).json({ error: 'Failed to create reservation' });
+        }
+      }
 
 
   public async getAll(req: Request, res: Response): Promise<void> {

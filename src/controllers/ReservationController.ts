@@ -64,11 +64,11 @@ class ReservationController {
           });
           await reservation.save();
     
-          // Send email notification
-      //     const subject2 = 'New Reservation';
-      // const html2 = 'New Reservation.';
-      // const email2 =  'bookings@ceylonvoyagersretreat.com';
-      // await sendEmail(email2, subject2, html2);
+          //Send email notification
+          const subject2 = 'New Reservation';
+      const html2 = 'New Reservation.';
+      const email2 =  'bookings@ceylonvoyagersretreat.com';
+      await sendEmail(email2, subject2, html2);
 
       const subject = 'Reservation Confirmation';
       const html = 'Your reservation has been confirmed.';
